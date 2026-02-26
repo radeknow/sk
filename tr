@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Sprawdzenie liczby argumentów
+if [ "$#" -ne 3 ]; then
+    echo "Użycie: $0 <plik_do_zmiany> <plik_stare_znaki> <plik_nowe_znaki>"
+    exit 1
+fi
+
+PLIK="$1"
+PLIK_STARE="$2"
+PLIK_NOWE="$3"
+
+# Sprawdzenie czy pliki istnieją
+for f in "$PLIK" "$PLIK_STARE" "$PLIK_NOWE"; do
+    if [ ! -f "$f" ]; then
+        echo "Błąd: Plik $f nie istnieje."
+        exit 1
+    fi
+done
+
+# Wczytanie znaków (usuwamy znaki nowej linii)
+STARE=$(tr -d '\n' < "$PLIK_STARE")
+NOWE=$(tr -d '\n' < "$PLIK_NOWE")
+
+# Sprawdzenie długości
+if [ "${#STARE}" -ne "${#NOWE}" ]; then
+    echo "Błąd: Pliki ze znakami muszą mieć tę samą liczbę znaków."
+    exit 1
+fi
+
+# Zamiana znaków
+TMP=$(mktemp)
+
+tr "$STARE" "$NOWE" < "$PLIK" > "$TMP"
+mv "$TMP" "$PLIK"
+
+echo "Zamiana zakończona pomyślnie."
