@@ -9,6 +9,9 @@ MAPA="$1"
 INPUT="$2"
 OUTPUT="$3"
 
+START_TS=$(date +%s)
+echo "Start: $(date '+%Y-%m-%d %H:%M:%S')"
+
 SED_SCRIPT=$(mktemp)
 
 while IFS='|' read -r OLD NEW
@@ -25,5 +28,11 @@ done < "$MAPA"
 sed -f "$SED_SCRIPT" "$INPUT" > "$OUTPUT"
 
 rm "$SED_SCRIPT"
+
+END_TS=$(date +%s)
+echo "Koniec: $(date '+%Y-%m-%d %H:%M:%S')"
+
+ELAPSED=$((END_TS - START_TS))
+echo "Czas wykonania: ${ELAPSED}s"
 
 echo "Gotowe → $OUTPUT"
