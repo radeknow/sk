@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Start: $(date '+%Y-%m-%d %H:%M:%S')"
+
 # Sprawdzenie liczby argumentów
 if [ "$#" -ne 3 ]; then
     echo "Użycie: $0 <plik_do_zmiany> <plik_stare_znaki> <plik_nowe_znaki>"
@@ -35,3 +37,5 @@ tr "$STARE" "$NOWE" < "$PLIK" > "$TMP"
 mv "$TMP" "$PLIK"
 
 echo "Zamiana zakończona pomyślnie."
+
+echo "Koniec: $(date '+%Y-%m-%d %H:%M:%S')"
