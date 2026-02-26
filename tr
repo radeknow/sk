@@ -1,29 +1,43 @@
 #!/bin/bash
 
-if [ "$#" -ne 3 ]; then
-  echo "Użycie: $0 mapa.txt input.csv output.csv"
+if [ "$#" -ne 2 ]; then
+  echo "Użycie: $0 input.csv output.csv"
   exit 1
 fi
 
-MAPA="$1"
-INPUT="$2"
-OUTPUT="$3"
+INPUT="$1"
+OUTPUT="$2"
 
 START_TS=$(date +%s)
 echo "Start: $(date '+%Y-%m-%d %H:%M:%S')"
 
 SED_SCRIPT=$(mktemp)
 
-while IFS='|' read -r OLD NEW
+########################################
+# LISTA PODMIAN — EDYTUJ TUTAJ
+########################################
+readarray -t ZAMIANY << 'EOF'
+ą|a
+ę|e
+ł|l
+ó|o
+ś|s
+" |'
+EOF
+########################################
+
+for LINIA in "${ZAMIANY[@]}"
 do
+  OLD="${LINIA%%|*}"
+  NEW="${LINIA#*|}"
+
   [ -z "$OLD" ] && continue
 
   OLD_ESC=$(printf '%s\n' "$OLD" | sed 's/[\/&]/\\&/g')
   NEW_ESC=$(printf '%s\n' "$NEW" | sed 's/[\/&]/\\&/g')
 
   echo "s/$OLD_ESC/$NEW_ESC/g" >> "$SED_SCRIPT"
-
-done < "$MAPA"
+done
 
 sed -f "$SED_SCRIPT" "$INPUT" > "$OUTPUT"
 
