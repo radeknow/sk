@@ -1,41 +1,29 @@
 #!/bin/bash
 
-echo "Start: $(date '+%Y-%m-%d %H:%M:%S')"
-
-# Sprawdzenie liczby argumentów
 if [ "$#" -ne 3 ]; then
-    echo "Użycie: $0 <plik_do_zmiany> <plik_stare_znaki> <plik_nowe_znaki>"
-    exit 1
+  echo "Użycie: $0 mapa.txt input.csv output.csv"
+  exit 1
 fi
 
-PLIK="$1"
-PLIK_STARE="$2"
-PLIK_NOWE="$3"
+MAPA="$1"
+INPUT="$2"
+OUTPUT="$3"
 
-# Sprawdzenie czy pliki istnieją
-for f in "$PLIK" "$PLIK_STARE" "$PLIK_NOWE"; do
-    if [ ! -f "$f" ]; then
-        echo "Błąd: Plik $f nie istnieje."
-        exit 1
-    fi
-done
+SED_SCRIPT=$(mktemp)
 
-# Wczytanie znaków (usuwamy znaki nowej linii)
-STARE=$(tr -d '\n' < "$PLIK_STARE")
-NOWE=$(tr -d '\n' < "$PLIK_NOWE")
+while IFS='|' read -r OLD NEW
+do
+  [ -z "$OLD" ] && continue
 
-# Sprawdzenie długości
-if [ "${#STARE}" -ne "${#NOWE}" ]; then
-    echo "Błąd: Pliki ze znakami muszą mieć tę samą liczbę znaków."
-    exit 1
-fi
+  OLD_ESC=$(printf '%s\n' "$OLD" | sed 's/[\/&]/\\&/g')
+  NEW_ESC=$(printf '%s\n' "$NEW" | sed 's/[\/&]/\\&/g')
 
-# Zamiana znaków
-TMP=$(mktemp)
+  echo "s/$OLD_ESC/$NEW_ESC/g" >> "$SED_SCRIPT"
 
-tr "$STARE" "$NOWE" < "$PLIK" > "$TMP"
-mv "$TMP" "$PLIK"
+done < "$MAPA"
 
-echo "Zamiana zakończona pomyślnie."
+sed -f "$SED_SCRIPT" "$INPUT" > "$OUTPUT"
 
-echo "Koniec: $(date '+%Y-%m-%d %H:%M:%S')"
+rm "$SED_SCRIPT"
+
+echo "Gotowe → $OUTPUT"
