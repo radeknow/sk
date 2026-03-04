@@ -1,0 +1,58 @@
+# === KONFIGURACJA ===
+$plik = "C:\Temp\godzina.txt"      # Ścieżka do pliku
+$url  = "https://www.google.com"   # Strona do otwarcia
+
+# === POBRANIE AKTUALNEJ GODZINY (co do minuty) ===
+$czas = Get-Date -Format "yyyy-MM-dd HH:mm"
+
+# === ZAPIS DO PLIKU ===
+$czas | Out-File -FilePath $plik -Encoding UTF8
+
+# === OTWARCIE STRONY W MS EDGE ===
+Start-Process "msedge.exe" $url
+
+
+
+# ===== KONFIGURACJA =====
+$plik = "C:\temp\czas.txt"
+$url = "https://twojastrona.pl"
+$edgePath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+$interwalSekundy = 60
+$limitMinut = 480   # 480 minut = 8 godzin
+# ==========================
+
+Write-Host "Monitoring rozpoczęty..."
+
+while ($true) {
+    try {
+        if (Test-Path $plik) {
+            $zawartosc = Get-Content $plik -Raw
+            $czasZPliku = [datetime]::ParseExact($zawartosc.Trim(), "yyyy-MM-dd HH:mm", $null)
+
+            $teraz = Get-Date
+            $roznica = $teraz - $czasZPliku
+
+            if ($roznica.TotalMinutes -ge $limitMinut) {
+                Write-Host "Minął ustawiony limit minut. Otwieram stronę..."
+
+                Start-Process $edgePath $url
+
+                # Aktualizacja godziny w pliku
+                $teraz.ToString("yyyy-MM-dd HH:mm") | Set-Content $plik
+
+                Write-Host "Godzina w pliku została zaktualizowana."
+            }
+        }
+        else {
+            Write-Host "Plik nie istnieje."
+        }
+    }
+    catch {
+        Write-Host "Błąd: $_"
+    }
+
+    Start-Sleep -Seconds $interwalSekundy
+}
+
+
+
