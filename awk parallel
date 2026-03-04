@@ -1,0 +1,3 @@
+parallel --pipe -j $(nproc) awk 'NR==FNR{ids[$1];next} $1 in ids' lista.txt -
+
+parallel --pipe -j $(nproc) --block 100M awk '{...}' < duzy_plik.csv > wynik.csv
