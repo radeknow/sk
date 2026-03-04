@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# ===================== KONFIGURACJA =====================
+PARALLEL_JOBS=0   # 0 = tyle ile rdzeni CPU
+# =======================================================
+
+START_DATE=$(date "+%Y-%m-%d %H:%M:%S")
+START_TS=$(date +%s)
+
+echo "=== START: $START_DATE ==="
+
+if [ "$#" -ne 2 ]; then
+    echo "Użycie: $0 <plik_z_zamianami> <plik_lub_katalog_wejściowy>"
+    exit 1
+fi
+
+ZAMIANY="$1"
+WEJSCIE="$2"
+
+if [ ! -f "$ZAMIANY" ]; then
+    echo "Plik z zamianami nie istnieje!"
+    exit 1
+fi
+
+# Jeden znacznik czasu dla całego uruchomienia
+TIMESTAMP=$(date "+%Y%m%d_%H%M%S")
+export TIMESTAMP
+
+# Budowanie wyrażenia sed
+SED_EXPR=""
+while IFS='=' read -r FROM TO; do
+    [ -z "$FROM" ] && continue
+    SED_EXPR="${SED_EXPR}s/${FROM}/${TO}/g;"
+done < "$ZAMIANY"
+
+export SED_EXPR
+
+przetworz_plik() {
+    local PLIK="$1"
+
+    DIRNAME=$(dirname "$PLIK")
+    BASENAME=$(basename "$PLIK")
+
+    NAME="${BASENAME%.*}"
+    EXT="${BASENAME##*.}"
+
+    if [ "$NAME" = "$EXT" ]; then
+        OUT_FILE="$DIRNAME/${BASENAME}_${TIMESTAMP}"
+    else
+        OUT_FILE="$DIRNAME/${NAME}_${TIMESTAMP}.${EXT}"
+    fi
+
+    echo "[PID $$] $PLIK -> $OUT_FILE"
+
+    sed "$SED_EXPR" "$PLIK" > "$OUT_FILE"
+}
+
+export -f przetworz_plik
+
+if [ -f "$WEJSCIE" ]; then
+    przetworz_plik "$WEJSCIE"
+elif [ -d "$WEJSCIE" ]; then
+    find "$WEJSCIE" -type f -name "*.txt" -print0 \
+        | xargs -0 -n 1 -P "$PARALLEL_JOBS" bash -c 'przetworz_plik "$@"' _
+else
+    echo "Wejście nie jest plikiem ani katalogiem!"
+    exit 1
+fi
+
+END_DATE=$(date "+%Y-%m-%d %H:%M:%S")
+END_TS=$(date +%s)
+DURATION=$((END_TS - START_TS))
+
+echo "=== KONIEC: $END_DATE ==="
+echo "Czas wykonania: ${DURATION}s"
